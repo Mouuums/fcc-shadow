@@ -1027,23 +1027,27 @@ function parseCSV(text) {
 async function loadData() {
   try {
     // Charge les deux CSV en parallèle
-    const [sessText, playText] = await Promise.all([
-      fetch(SESSION_CSV  + '?t=' + Date.now()).then(r => r.text()),
-      fetch(PLAYER_CSV   + '?t=' + Date.now()).then(r => r.text()),
-    ]);
+    // APRÈS
+const [sessText, playText] = await Promise.all([
+  fetch(SESSION_CSV + '?t=' + Date.now()).then(r => r.arrayBuffer()).then(b => new TextDecoder('utf-8').decode(b)),
+  fetch(PLAYER_CSV  + '?t=' + Date.now()).then(r => r.arrayBuffer()).then(b => new TextDecoder('utf-8').decode(b)),
+]);
 
     const rawSessions = parseCSV(sessText);
     const rawPlayers  = parseCSV(playText);
 
     // Index joueurs par player_id
     players = {};
-    rawPlayers.forEach(p => {
-      players[p.player_id] = p;
-    });
+rawPlayers.forEach(p => {
+  const pid = String(p.player_id).replace('.0','').trim();
+  players[pid] = p;
+});
+
 
     // Enrichir sessions
     sessions = rawSessions.map(s => {
-      const p = players[s.player_id] || {};
+  const pidKey = String(s.player_id).replace('.0','').trim();
+  const p = players[pidKey] || {};
       const dist = parseFloat(s.distance_total_m) || 0;
       const dhi  = parseFloat(s.distance_hi_m)    || 0;
       const dur  = parseFloat(s.duration_min)     || 1;
@@ -1138,12 +1142,15 @@ function showView(name) {
 function renderDashboard() {
   if (!sessions.length) return;
 
-  const trainings = sessions.filter(s => s.session_type === 'training');
-  const lastDate  = [...new Set(sessions.map(s => s.session_date))].sort().reverse()[0];
-  const lastSess  = sessions.filter(s => s.session_date === lastDate);
-
-  document.getElementById('dash-sub').textContent =
-    `${sessions.length} sessions · Dernière séance : ${fmtDate(lastDate)} · ${Object.keys(players).length} joueurs`;
+  const allDates      = [...new Set(sessions.map(s => s.session_date))].sort().reverse();
+const lastDate      = allDates[0];
+const lastSess      = sessions.filter(s => s.session_date === lastDate);
+const trainingDates = [...new Set(sessions.filter(s=>s.session_type==='training').map(s=>s.session_date))];
+const matchDates    = [...new Set(sessions.filter(s=>s.session_type==='match').map(s=>s.session_date))];
+const nbSeances     = allDates.length;
+document.getElementById('gs-sessions').textContent = nbSeances;
+document.getElementById('gs-sessions-d').textContent =
+  `${trainingDates.length} entraînement(s) · ${matchDates.length} match(s)`;;
 
   // Stats globales
   const totalDist  = sessions.reduce((a,s) => a + parseFloat(s.distance_total_m||0), 0);
