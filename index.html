@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHADOW · FC Courtetelle</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & VARS ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0D0F14;
+  --bg2:       #13161E;
+  --bg3:       #1A1E28;
+  --border:    #252A38;
+  --border2:   #2E3446;
+  --green:     #1DBA88;
+  --green-d:   #0F6E52;
+  --green-l:   rgba(29,186,136,.12);
+  --amber:     #F0A830;
+  --amber-l:   rgba(240,168,48,.1);
+  --blue:      #4B8EF0;
+  --blue-l:    rgba(75,142,240,.1);
+  --red:       #E05A5A;
+  --text:      #E8ECF4;
+  --text2:     #8892A4;
+  --text3:     #525C6E;
+  --radius:    10px;
+  --radius-lg: 16px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── LOGIN SCREEN ──────────────────────────────────────────────── */
+#login-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+
+.login-box {
+  width: 380px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px;
+  text-align: center;
+}
+
+.login-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--green);
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+
+.login-club {
+  font-size: 12px;
+  color: var(--text2);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 36px;
+}
+
+.login-box h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+
+.login-box input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 2px;
+  outline: none;
+  transition: border-color .2s;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.login-box input:focus { border-color: var(--green); }
+
+.btn-login {
+  width: 100%;
+  background: var(--green);
+  color: #0D0F14;
+  border: none;
+  border-radius: var(--radius);
+  padding: 14px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+
+.btn-login:hover { opacity: .88; }
+
+.login-error {
+  color: var(--red);
+  font-size: 13px;
+  margin-top: 12px;
+  display: none;
+}
+
+/* ── APP SHELL ─────────────────────────────────────────────────── */
+#app { display: none; }
+
+/* ── HEADER ────────────────────────────────────────────────────── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(13,15,20,.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.header-left {
+  display: flex; align-items: center; gap: 24px;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--green);
+  letter-spacing: -0.5px;
+}
+
+.header-club {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding-left: 24px;
+  border-left: 1px solid var(--border);
+}
+
+.header-nav {
+  display: flex; gap: 4px;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--green-l); color: var(--green); }
+
+.header-right {
+  display: flex; align-items: center; gap: 16px;
+}
+
+.badge-live {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text2);
+  font-family: 'DM Mono', monospace;
+}
+
+.dot-live {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .3; }
+}
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+/* ── MAIN ──────────────────────────────────────────────────────── */
+main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 32px 80px;
+}
+
+/* ── PAGE TITLES ───────────────────────────────────────────────── */
+.page-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.page-sub {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 32px;
+}
+
+/* ── VIEWS ─────────────────────────────────────────────────────── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── GRID STATS ────────────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+
+.stat-card:hover { border-color: var(--border2); }
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.stat-card.green::before { background: var(--green); }
+.stat-card.amber::before { background: var(--amber); }
+.stat-card.blue::before { background: var(--blue); }
+.stat-card.red::before { background: var(--red); }
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-family: 'DM Mono', monospace;
+}
+
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-value.green { color: var(--green); }
+.stat-value.amber { color: var(--amber); }
+.stat-value.blue  { color: var(--blue); }
+.stat-value.red   { color: var(--red); }
+
+.stat-detail {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* ── TWO COLS ──────────────────────────────────────────────────── */
+.two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.three-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* ── CARD ──────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-bottom: 20px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── SESSION TYPE TABS ─────────────────────────────────────────── */
+.type-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+  width: fit-content;
+}
+
+.type-tab {
+  padding: 10px 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .5px;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.type-tab.active {
+  background: var(--green);
+  color: #0D0F14;
+}
+
+.type-tab:not(.active):hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+/* ── PLAYER TABLE ──────────────────────────────────────────────── */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+  cursor: pointer;
+}
+
+tbody tr:hover { background: var(--bg3); }
+tbody tr:last-child { border-bottom: none; }
+
+tbody td {
+  padding: 12px 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.td-name {
+  font-weight: 500;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  font-family: 'DM Mono', monospace;
+  flex-shrink: 0;
+}
+
+.badge-score {
+  display: inline-flex; align-items: center;
+  background: var(--green-l);
+  color: var(--green);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-score.mid {
+  background: var(--amber-l);
+  color: var(--amber);
+}
+
+.badge-score.low {
+  background: rgba(224,90,90,.1);
+  color: var(--red);
+}
+
+.td-mono {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.td-green { color: var(--green); font-family: 'DM Mono', monospace; font-size: 12px; }
+.td-amber { color: var(--amber); font-family: 'DM Mono', monospace; font-size: 12px; }
+
+/* ── MINI BAR ──────────────────────────────────────────────────── */
+.mini-bar-wrap {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.mini-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.mini-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--green);
+  transition: width .6s ease;
+}
+
+/* ── SESSION DETAIL ────────────────────────────────────────────── */
+.session-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.session-title-block .session-type-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--green-l);
+  color: var(--green);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.session-title-block h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.session-title-block .meta {
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.score-big {
+  text-align: center;
+}
+
+.score-big .num {
+  font-family: 'Syne', sans-serif;
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--green);
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.score-big .denom {
+  font-size: 14px;
+  color: var(--text3);
+  font-family: 'DM Mono', monospace;
+}
+
+.score-big .label {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  margin-top: 4px;
+}
+
+/* ── KPI CARDS ─────────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+}
+
+.kpi-accent {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.kpi-card .kpi-label {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 8px;
+}
+
+.kpi-card .kpi-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 2px;
+}
+
+.kpi-card .kpi-unit {
+  font-size: 12px;
+  color: var(--text2);
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+.kpi-card .kpi-compare {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── ZONE BAR ──────────────────────────────────────────────────── */
+.zone-bar-wrap {
+  margin-bottom: 8px;
+}
+
+.zone-bar {
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.zone-seg { height: 100%; transition: width .8s ease; }
+
+.zone-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.zone-leg-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px;
+  color: var(--text2);
+  font-family: 'DM Mono', monospace;
+}
+
+.zone-dot {
+  width: 8px; height: 8px;
+  border-radius: 2px;
+}
+
+/* ── HISTORY LIST ──────────────────────────────────────────────── */
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .15s;
+  border: 1px solid transparent;
+}
+
+.history-item:hover {
+  background: var(--bg3);
+  border-color: var(--border);
+}
+
+.history-date {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text3);
+  min-width: 80px;
+}
+
+.history-type {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  padding: 3px 8px;
+  border-radius: 4px;
+  min-width: 90px;
+  text-align: center;
+}
+
+.history-type.training {
+  background: var(--green-l);
+  color: var(--green);
+}
+
+.history-type.match {
+  background: var(--amber-l);
+  color: var(--amber);
+}
+
+.history-info {
+  flex: 1;
+}
+
+.history-name {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.history-meta {
+  font-size: 12px;
+  color: var(--text2);
+  font-family: 'DM Mono', monospace;
+}
+
+.history-score {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+/* ── FILTER BAR ────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+
+.filter-select:focus { border-color: var(--green); }
+
+.filter-count {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: 'DM Mono', monospace;
+  margin-left: auto;
+}
+
+/* ── BACK BTN ──────────────────────────────────────────────────── */
+.back-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 24px;
+  transition: all .2s;
+}
+
+.back-btn:hover { border-color: var(--border2); color: var(--text); }
+
+/* ── SCROLLBAR ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── EMPTY STATE ───────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── SECTION LABEL ─────────────────────────────────────────────── */
+.section-label {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 12px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── REPORT EMBED ──────────────────────────────────────────────── */
+.report-link-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--green);
+  color: #0D0F14;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity .2s;
+  text-decoration: none;
+}
+
+.report-link-btn:hover { opacity: .88; }
+
+/* ── RESPONSIVE ────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .two-cols { grid-template-columns: 1fr; }
+  .three-cols { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  main { padding: 20px 16px 60px; }
+  header { padding: 0 16px; }
+  .header-club { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">SHADOW</div>
+    <div class="login-club">FC Courtetelle · Suisse</div>
+    <h2>Accès staff</h2>
+    <input type="password" id="pwd-input" placeholder="Mot de passe" autocomplete="off">
+    <button class="btn-login" onclick="tryLogin()">Connexion</button>
+    <div class="login-error" id="login-error">Mot de passe incorrect</div>
+  </div>
+</div>
+
+<!-- ══════════ APP ══════════ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <span class="logo">SHADOW</span>
+      <span class="header-club">FC Courtetelle · 1ère Ligue Classic</span>
+    </div>
+    <nav class="header-nav">
+      <button class="nav-btn active" onclick="showView('dashboard')">Tableau de bord</button>
+      <button class="nav-btn" onclick="showView('sessions')">Séances</button>
+      <button class="nav-btn" onclick="showView('history')">Historique</button>
+    </nav>
+    <div class="header-right">
+      <span class="badge-live"><span class="dot-live"></span><span id="last-update">—</span></span>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ══════════ DASHBOARD ══════════ -->
+    <div id="view-dashboard" class="view active">
+      <div class="page-title">Tableau de bord</div>
+      <div class="page-sub" id="dash-sub">Chargement des données…</div>
+
+      <!-- Stats globales saison -->
+      <div class="section-label">Statistiques saison</div>
+      <div class="stats-grid" id="global-stats">
+        <div class="stat-card green">
+          <div class="stat-label">Séances totales</div>
+          <div class="stat-value green" id="gs-sessions">—</div>
+          <div class="stat-detail" id="gs-sessions-d">—</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Distance totale équipe</div>
+          <div class="stat-value blue" id="gs-dist">—</div>
+          <div class="stat-detail" id="gs-dist-d">km cumulés</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">DHI moyenne / séance</div>
+          <div class="stat-value amber" id="gs-dhi">—</div>
+          <div class="stat-detail">m · Distance Haute Intensité</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Score moyen séance</div>
+          <div class="stat-value red" id="gs-score">—</div>
+          <div class="stat-detail">sur 100 · indicateur SHADOW</div>
+        </div>
+      </div>
+
+      <!-- Dernière séance -->
+      <div class="section-label">Dernière séance</div>
+      <div class="card" id="last-session-card" style="margin-bottom:24px">
+        <div class="empty">Chargement…</div>
+      </div>
+
+      <!-- Classement DHI + Meilleurs scores -->
+      <div class="two-cols">
+        <div class="card">
+          <div class="card-title">Top DHI — dernière séance</div>
+          <div class="card-sub" id="top-dhi-date">—</div>
+          <div id="top-dhi-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Scores séance — dernière séance</div>
+          <div class="card-sub" id="top-score-date">—</div>
+          <div id="top-score-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ SESSIONS ══════════ -->
+    <div id="view-sessions" class="view">
+      <div id="session-list-view">
+        <div class="page-title">Séances</div>
+        <div class="page-sub">Consultez les rapports par type et par joueur</div>
+
+        <div class="type-tabs">
+          <button class="type-tab active" onclick="setSessionType('training')">Entraînements</button>
+          <button class="type-tab" onclick="setSessionType('match')">Matchs</button>
+        </div>
+
+        <div class="filter-bar">
+          <select class="filter-select" id="filter-date" onchange="renderSessionList()">
+            <option value="">Toutes les dates</option>
+          </select>
+          <select class="filter-select" id="filter-player" onchange="renderSessionList()">
+            <option value="">Tous les joueurs</option>
+          </select>
+          <span class="filter-count" id="filter-count"></span>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Joueur</th>
+                  <th>Date</th>
+                  <th>Score</th>
+                  <th>Distance</th>
+                  <th>DHI</th>
+                  <th>Vmax</th>
+                  <th>Accel / Décel</th>
+                  <th>HMLD</th>
+                  <th>Durée</th>
+                </tr>
+              </thead>
+              <tbody id="session-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAIL JOUEUR -->
+      <div id="session-detail-view" style="display:none">
+        <button class="back-btn" onclick="closeDetail()">← Retour aux séances</button>
+        <div id="detail-content"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ HISTORY ══════════ -->
+    <div id="view-history" class="view">
+      <div class="page-title">Historique</div>
+      <div class="page-sub">Toutes les séances enregistrées</div>
+
+      <div class="filter-bar">
+        <select class="filter-select" id="hist-type" onchange="renderHistory()">
+          <option value="">Tous types</option>
+          <option value="training">Entraînement</option>
+          <option value="match">Match</option>
+        </select>
+        <select class="filter-select" id="hist-player" onchange="renderHistory()">
+          <option value="">Tous les joueurs</option>
+        </select>
+        <span class="filter-count" id="hist-count"></span>
+      </div>
+
+      <div class="card">
+        <div id="history-list"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════
+const PASSWORD = "shadow2026";    // ← changer ici
+const SESSION_CSV  = "data/session.csv";
+const PLAYER_CSV   = "data/player_info.csv";
+
+// ══════════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════════
+let sessions = [];
+let players  = {};
+let currentType = 'training';
+
+// ══════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════
+function tryLogin() {
+  const val = document.getElementById('pwd-input').value;
+  if (val === PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('pwd-input').value = '';
+  }
+}
+
+document.getElementById('pwd-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') tryLogin();
+});
+
+function logout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pwd-input').value = '';
+}
+
+// ══════════════════════════════════════════════════════════════
+// CSV PARSER
+// ══════════════════════════════════════════════════════════════
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split(',');
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || '').trim(); });
+    return obj;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOAD DATA
+// ══════════════════════════════════════════════════════════════
+async function loadData() {
+  try {
+    // Charge les deux CSV en parallèle
+    const [sessText, playText] = await Promise.all([
+      fetch(SESSION_CSV  + '?t=' + Date.now()).then(r => r.text()),
+      fetch(PLAYER_CSV   + '?t=' + Date.now()).then(r => r.text()),
+    ]);
+
+    const rawSessions = parseCSV(sessText);
+    const rawPlayers  = parseCSV(playText);
+
+    // Index joueurs par player_id
+    players = {};
+    rawPlayers.forEach(p => {
+      players[p.player_id] = p;
+    });
+
+    // Enrichir sessions
+    sessions = rawSessions.map(s => {
+      const p = players[s.player_id] || {};
+      const dist = parseFloat(s.distance_total_m) || 0;
+      const dhi  = parseFloat(s.distance_hi_m)    || 0;
+      const dur  = parseFloat(s.duration_min)     || 1;
+      const hmld = parseFloat(s.hmld)             || 0;
+      const spr  = parseInt(s.sprint_count)        || 0;
+      const acc  = parseInt(s.accel_count)         || 0;
+      const dec  = parseInt(s.decel_count)         || 0;
+      const vmax = parseFloat(s.speed_max_kmh)     || 0;
+
+      // Score SHADOW : Vol×35% + Int×40% + Expl×25%
+      // Normalisation simple sur des seuils raisonnables
+      const s_vol  = Math.min(Math.round((dist/1000) / 12 * 100), 100);
+      const s_int  = Math.min(Math.round(dhi / 800 * 100), 100);
+      const s_expl = Math.min(Math.round(spr / 15 * 100), 100);
+      const score  = Math.round(s_vol * .35 + s_int * .40 + s_expl * .25);
+
+      return {
+        ...s,
+        player_name: `${p.first_name || '?'} ${p.last_name || '?'}`,
+        player_pos:  p.position || '—',
+        player_num:  p.jersey_number || '?',
+        dist_km:     (dist / 1000).toFixed(2),
+        dhi_m:       Math.round(dhi),
+        vmax_kmh:    vmax.toFixed(1),
+        hmld_val:    Math.round(hmld),
+        sprint_val:  spr,
+        accel_val:   acc,
+        decel_val:   dec,
+        intensite:   (dist / dur).toFixed(0),
+        score,
+        s_vol, s_int, s_expl,
+        // Zones (estimation depuis dist_marche / trot / course + hi + sprint)
+        z_marche: parseFloat(s.distance_marche_m) || 0,
+        z_trot:   parseFloat(s.distance_trot_m)   || 0,
+        z_course: parseFloat(s.distance_course_m) || 0,
+        z_hi:     parseFloat(s.distance_hi_m) - (parseFloat(s.distance_sprint_m)||0),
+        z_sprint: parseFloat(s.distance_sprint_m) || 0,
+      };
+    });
+
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('fr-CH');
+    renderDashboard();
+    renderSessionList();
+    renderHistory();
+    populateFilters();
+
+  } catch(err) {
+    console.error(err);
+    document.getElementById('dash-sub').textContent = "Erreur de chargement — vérifiez que les CSV sont dans data/";
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+function scoreClass(s) {
+  if (s >= 82) return '';
+  if (s >= 70) return 'mid';
+  return 'low';
+}
+
+function scoreColor(s) {
+  if (s >= 82) return 'var(--green)';
+  if (s >= 70) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('fr-CH', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  const idx = {dashboard:0, sessions:1, history:2}[name];
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════
+function renderDashboard() {
+  if (!sessions.length) return;
+
+  const trainings = sessions.filter(s => s.session_type === 'training');
+  const lastDate  = [...new Set(sessions.map(s => s.session_date))].sort().reverse()[0];
+  const lastSess  = sessions.filter(s => s.session_date === lastDate);
+
+  document.getElementById('dash-sub').textContent =
+    `${sessions.length} sessions · Dernière séance : ${fmtDate(lastDate)} · ${Object.keys(players).length} joueurs`;
+
+  // Stats globales
+  const totalDist  = sessions.reduce((a,s) => a + parseFloat(s.distance_total_m||0), 0);
+  const avgDHI     = sessions.reduce((a,s) => a + parseFloat(s.dhi_m||0), 0) / (sessions.length||1);
+  const avgScore   = sessions.reduce((a,s) => a + s.score, 0) / (sessions.length||1);
+
+  document.getElementById('gs-sessions').textContent = sessions.length;
+  document.getElementById('gs-sessions-d').textContent =
+    `${trainings.length} entraînements · ${sessions.length - trainings.length} matchs`;
+  document.getElementById('gs-dist').textContent = (totalDist/1000).toFixed(0);
+  document.getElementById('gs-dhi').textContent  = Math.round(avgDHI);
+  document.getElementById('gs-score').textContent = Math.round(avgScore);
+
+  // Dernière séance card
+  const card = document.getElementById('last-session-card');
+  card.innerHTML = `
+    <div class="session-header">
+      <div class="session-title-block">
+        <div class="session-type-badge">${lastSess[0]?.session_type === 'training' ? '⚽ Entraînement' : '🏆 Match'}</div>
+        <h2>${fmtDate(lastDate)}</h2>
+        <div class="meta">${lastSess.length} joueurs enregistrés · ${lastSess[0]?.duration_min || '—'} min</div>
+      </div>
+      <div class="score-big">
+        <div class="num">${Math.round(lastSess.reduce((a,s)=>a+s.score,0)/lastSess.length)}</div>
+        <div class="denom">/ 100</div>
+        <div class="label">Score moyen</div>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      ${[
+        ['Distance moy.', (lastSess.reduce((a,s)=>a+parseFloat(s.distance_total_m||0),0)/lastSess.length/1000).toFixed(1), 'km', 'var(--green)'],
+        ['DHI moyenne', Math.round(lastSess.reduce((a,s)=>a+parseFloat(s.dhi_m||0),0)/lastSess.length), 'm', 'var(--green)'],
+        ['Vmax max équipe', Math.max(...lastSess.map(s=>parseFloat(s.speed_max_kmh||0))).toFixed(1), 'km/h', 'var(--amber)'],
+        ['Accel moy.', Math.round(lastSess.reduce((a,s)=>a+parseInt(s.accel_count||0),0)/lastSess.length), 'efforts', 'var(--blue)'],
+        ['HMLD moy.', Math.round(lastSess.reduce((a,s)=>a+parseFloat(s.hmld||0),0)/lastSess.length), 'u.a.', 'var(--amber)'],
+        ['Sprints moy.', Math.round(lastSess.reduce((a,s)=>a+parseInt(s.sprint_count||0),0)/lastSess.length), 'efforts', 'var(--blue)'],
+      ].map(([l,v,u,c]) => `
+        <div class="kpi-card">
+          <div class="kpi-accent" style="background:${c}"></div>
+          <div class="kpi-label">${l}</div>
+          <div class="kpi-val" style="color:${c}">${v}<span class="kpi-unit">${u}</span></div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="text-align:right;margin-top:8px">
+      <button class="report-link-btn" onclick="showView('sessions')">Voir les rapports détaillés →</button>
+    </div>
+  `;
+
+  // Top DHI
+  const byDHI = [...lastSess].sort((a,b) => b.dhi_m - a.dhi_m);
+  const maxDHI = byDHI[0]?.dhi_m || 1;
+  document.getElementById('top-dhi-date').textContent = fmtDate(lastDate);
+  document.getElementById('top-dhi-list').innerHTML = byDHI.slice(0,6).map((s,i) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);min-width:20px">#${i+1}</span>
+      <div class="avatar">${initials(s.player_name)}</div>
+      <span style="flex:1;font-size:13px;font-weight:500">${s.player_name}</span>
+      <div class="mini-bar-wrap" style="width:80px">
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:${s.dhi_m/maxDHI*100}%"></div></div>
+      </div>
+      <span class="td-green">${s.dhi_m} m</span>
+    </div>
+  `).join('');
+
+  // Top scores
+  const byScore = [...lastSess].sort((a,b) => b.score - a.score);
+  const maxScore = 100;
+  document.getElementById('top-score-date').textContent = fmtDate(lastDate);
+  document.getElementById('top-score-list').innerHTML = byScore.slice(0,6).map((s,i) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);min-width:20px">#${i+1}</span>
+      <div class="avatar">${initials(s.player_name)}</div>
+      <span style="flex:1;font-size:13px;font-weight:500">${s.player_name}</span>
+      <div class="mini-bar-wrap" style="width:80px">
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:${s.score}%;background:${scoreColor(s.score)}"></div></div>
+      </div>
+      <span class="badge-score ${scoreClass(s.score)}">${s.score}</span>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SESSIONS
+// ══════════════════════════════════════════════════════════════
+function setSessionType(type) {
+  currentType = type;
+  document.querySelectorAll('.type-tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0 && type==='training') || (i===1 && type==='match'));
+  });
+  renderSessionList();
+}
+
+function renderSessionList() {
+  const dateFilter   = document.getElementById('filter-date').value;
+  const playerFilter = document.getElementById('filter-player').value;
+
+  let filtered = sessions.filter(s => s.session_type === currentType);
+  if (dateFilter)   filtered = filtered.filter(s => s.session_date === dateFilter);
+  if (playerFilter) filtered = filtered.filter(s => s.player_id === playerFilter);
+
+  document.getElementById('filter-count').textContent = `${filtered.length} résultat(s)`;
+
+  const tbody = document.getElementById('session-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty">Aucune séance trouvée</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => `
+    <tr onclick="openDetail('${s.session_id}','${s.player_id}','${s.session_date}')">
+      <td class="td-name">
+        <div class="avatar">${initials(s.player_name)}</div>
+        <div>
+          <div style="font-weight:500">${s.player_name}</div>
+          <div style="font-size:11px;color:var(--text3)">${s.player_pos}</div>
+        </div>
+      </td>
+      <td class="td-mono">${fmtDate(s.session_date)}</td>
+      <td><span class="badge-score ${scoreClass(s.score)}">${s.score}</span></td>
+      <td class="td-green">${s.dist_km} km</td>
+      <td class="td-amber">${s.dhi_m} m</td>
+      <td class="td-mono">${s.vmax_kmh} km/h</td>
+      <td class="td-mono">${s.accel_val} / ${s.decel_val}</td>
+      <td class="td-mono">${s.hmld_val} u.a.</td>
+      <td class="td-mono">${parseFloat(s.duration_min||0).toFixed(0)} min</td>
+    </tr>
+  `).join('');
+}
+
+function populateFilters() {
+  const dates   = [...new Set(sessions.map(s => s.session_date))].sort().reverse();
+  const playerIds = [...new Set(sessions.map(s => s.player_id))];
+
+  const selDate   = document.getElementById('filter-date');
+  const selPlayer = document.getElementById('filter-player');
+  const histPlayer = document.getElementById('hist-player');
+
+  dates.forEach(d => {
+    const o = new Option(fmtDate(d), d);
+    selDate.add(o);
+  });
+
+  playerIds.forEach(pid => {
+    const p = players[pid];
+    if (!p) return;
+    const name = `${p.first_name} ${p.last_name}`;
+    selPlayer.add(new Option(name, pid));
+    histPlayer.add(new Option(name, pid));
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// DETAIL
+// ══════════════════════════════════════════════════════════════
+function openDetail(sessionId, playerId, date) {
+  const s = sessions.find(x => x.session_id === sessionId && x.player_id === playerId);
+  if (!s) return;
+
+  // Contexte équipe même date/type
+  const team = sessions.filter(x => x.session_date === date && x.session_type === s.session_type);
+  const avgDist = team.reduce((a,x)=>a+parseFloat(x.distance_total_m||0),0)/team.length;
+  const avgDHI  = team.reduce((a,x)=>a+parseFloat(x.dhi_m||0),0)/team.length;
+  const avgVmax = team.reduce((a,x)=>a+parseFloat(x.vmax_kmh||0),0)/team.length;
+  const maxDHI  = Math.max(...team.map(x => x.dhi_m));
+
+  const totalZone = s.z_marche + s.z_trot + s.z_course + s.z_hi + s.z_sprint || 1;
+  const zones = [
+    {label:'Marche <7', val:s.z_marche, col:'#3A3F52'},
+    {label:'Trot 7-14', val:s.z_trot,   col:'#5DCAA5'},
+    {label:'Course 14-20', val:s.z_course, col:'#1DBA88'},
+    {label:'HI 20-25', val:s.z_hi,   col:'#F0A830'},
+    {label:'Sprint >25', val:s.z_sprint, col:'#E05A5A'},
+  ];
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="session-header">
+      <div class="session-title-block">
+        <div class="session-type-badge">${s.session_type==='training'?'⚽ Entraînement':'🏆 Match'}</div>
+        <h2>${s.player_name}</h2>
+        <div class="meta">${s.player_pos} · ${fmtDate(s.session_date)} · ${parseFloat(s.duration_min||0).toFixed(0)} min</div>
+      </div>
+      <div style="display:flex;gap:24px;align-items:center">
+        <div class="score-big">
+          <div class="num" style="font-size:40px;color:${scoreColor(s.score)}">${s.score}</div>
+          <div class="denom">/ 100</div>
+          <div class="label">SCORE SHADOW</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          ${[['VOLUME', s.s_vol, 'var(--green)'],['INTENSITÉ', s.s_int, 'var(--blue)'],['EXPLOSIVITÉ', s.s_expl, 'var(--amber)']].map(([l,v,c])=>`
+            <div>
+              <div style="font-size:9px;color:var(--text3);letter-spacing:1px;font-family:'DM Mono',monospace;margin-bottom:3px">${l}</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:80px;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+                  <div style="height:100%;width:${v}%;background:${c};border-radius:2px"></div>
+                </div>
+                <span style="font-family:'DM Mono',monospace;font-size:11px;color:${c}">${v}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Indicateurs de séance</div>
+    <div class="kpi-grid" style="margin-bottom:24px">
+      ${[
+        ['Distance totale', s.dist_km, 'km', 'var(--green)', `Moy. équipe : ${(avgDist/1000).toFixed(1)} km`],
+        ['DHI >18 km/h', s.dhi_m, 'm', 'var(--green)', `Moy. équipe : ${Math.round(avgDHI)} m`],
+        ['Intensité moy.', s.intensite, 'm/min', 'var(--blue)', `${parseFloat(s.duration_min||0).toFixed(0)} min de séance`],
+        ['Vitesse max', s.vmax_kmh, 'km/h', 'var(--amber)', `Moy. équipe : ${avgVmax.toFixed(1)} km/h`],
+        ['Accel / Décel', `${s.accel_val}/${s.decel_val}`, '', 'var(--blue)', 'Efforts explosifs >2 m/s²'],
+        ['HMLD', s.hmld_val, 'u.a.', 'var(--amber)', 'Charge mécanique'],
+      ].map(([l,v,u,c,d]) => `
+        <div class="kpi-card">
+          <div class="kpi-accent" style="background:${c}"></div>
+          <div class="kpi-label">${l}</div>
+          <div class="kpi-val" style="color:${c}">${v}<span class="kpi-unit">${u}</span></div>
+          <div class="kpi-compare">${d}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="section-label">Zones de vitesse</div>
+    <div class="card" style="margin-bottom:24px">
+      <div class="zone-bar">
+        ${zones.map(z => `<div class="zone-seg" style="width:${z.val/totalZone*100}%;background:${z.col}"></div>`).join('')}
+      </div>
+      <div class="zone-legend">
+        ${zones.map(z => `
+          <div class="zone-leg-item">
+            <div class="zone-dot" style="background:${z.col}"></div>
+            ${z.label} · ${(z.val/1000).toFixed(2)} km
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="section-label">Comparatif équipe — DHI</div>
+    <div class="card">
+      ${[...team].sort((a,b)=>b.dhi_m-a.dhi_m).map((t,i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);min-width:20px">#${i+1}</span>
+          <div class="avatar" style="${t.player_id===s.player_id?'border-color:var(--green);color:var(--green)':''}">${initials(t.player_name)}</div>
+          <span style="flex:1;font-size:13px;font-weight:${t.player_id===s.player_id?'700':'400'};color:${t.player_id===s.player_id?'var(--text)':'var(--text2)'}">${t.player_name}</span>
+          <div class="mini-bar" style="width:120px">
+            <div class="mini-bar-fill" style="width:${t.dhi_m/maxDHI*100}%;background:${t.player_id===s.player_id?'var(--green)':'var(--border2)'}"></div>
+          </div>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:${t.player_id===s.player_id?'var(--green)':'var(--text2)'};min-width:60px;text-align:right">${t.dhi_m} m</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  document.getElementById('session-list-view').style.display = 'none';
+  document.getElementById('session-detail-view').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function closeDetail() {
+  document.getElementById('session-list-view').style.display = 'block';
+  document.getElementById('session-detail-view').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════════════════════════
+function renderHistory() {
+  const typeFilter   = document.getElementById('hist-type').value;
+  const playerFilter = document.getElementById('hist-player').value;
+
+  let filtered = [...sessions].sort((a,b) => b.session_date.localeCompare(a.session_date));
+  if (typeFilter)   filtered = filtered.filter(s => s.session_type === typeFilter);
+  if (playerFilter) filtered = filtered.filter(s => s.player_id === playerFilter);
+
+  document.getElementById('hist-count').textContent = `${filtered.length} entrée(s)`;
+
+  const list = document.getElementById('history-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty">Aucune séance dans l'historique</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => `
+    <div class="history-item" onclick="showView('sessions');openDetail('${s.session_id}','${s.player_id}','${s.session_date}')">
+      <span class="history-date">${fmtDate(s.session_date)}</span>
+      <span class="history-type ${s.session_type}">${s.session_type==='training'?'Entraîn.':'Match'}</span>
+      <div class="history-info">
+        <div class="history-name">${s.player_name}</div>
+        <div class="history-meta">${s.player_pos} · ${s.dist_km} km · DHI ${s.dhi_m} m · ${parseFloat(s.duration_min||0).toFixed(0)} min</div>
+      </div>
+      <span class="history-score" style="color:${scoreColor(s.score)}">${s.score}</span>
+    </div>
+  `).join('');
+}
+</script>
+</body>
+</html>
