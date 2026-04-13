@@ -1147,18 +1147,14 @@ function renderDashboard() {
   const trainingDates = [...new Set(sessions.filter(s=>s.session_type==='training').map(s=>s.session_date))];
   const matchDates    = [...new Set(sessions.filter(s=>s.session_type==='match').map(s=>s.session_date))];
   const nbSeances     = allDates.length;
-  document.getElementById('gs-sessions').textContent = nbSeances;
-  document.getElementById('gs-sessions-d').textContent =
-  `${trainingDates.length} entraînement(s) · ${matchDates.length} match(s)`;;
-
   // Stats globales
   const totalDist  = sessions.reduce((a,s) => a + parseFloat(s.distance_total_m||0), 0);
   const avgDHI     = sessions.reduce((a,s) => a + parseFloat(s.dhi_m||0), 0) / (sessions.length||1);
   const avgScore   = sessions.reduce((a,s) => a + s.score, 0) / (sessions.length||1);
 
-  document.getElementById('gs-sessions').textContent = sessions.length;
+  document.getElementById('gs-sessions').textContent = nbSeances;
   document.getElementById('gs-sessions-d').textContent =
-    `${trainings.length} entraînements · ${sessions.length - trainings.length} matchs`;
+    `${trainingDates.length} entraînement(s) · ${matchDates.length} match(s)`;
   document.getElementById('gs-dist').textContent = (totalDist/1000).toFixed(0);
   document.getElementById('gs-dhi').textContent  = Math.round(avgDHI);
   document.getElementById('gs-score').textContent = Math.round(avgScore);
