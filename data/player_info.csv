@@ -1,1 +1,18 @@
+player_id,club_id,first_name,last_name,birth_date,position,jersey_number,created_at
+201,2,Eliott,Périat,2005-06-03,Milieu Offensif,9,2026-04-10 09:34:11.504892
+202,2,Jérémy,Ducommun,1996-09-09,Défenseur,3,2026-04-10 09:39:10.514871
+203,2,Tom,Villemin,1992-04-08,Défenseur/Latéral,7,2026-04-10 09:39:10.502993
+204,2,Antoine,Rossé,1996-08-15,Attaquant,11,2026-04-10 09:51:30.209476
+205,2,Adrien,Jeker,1992-10-28,Milieu,17,2026-04-10 09:51:30.217687
+206,2,Alassane,Diaby,1992-07-29,Milieu,10,2026-04-10 09:51:30.21538
+207,2,Gabriel,Pereira,2001-12-17,Latéral,18,2026-04-10 09:51:30.21231
+208,2,Hugo,Casano,2001-03-29,Milieu/Ailier,27,2026-04-10 09:51:30.675638
+209,2,Baptiste,Stroppolo,2005-07-27,Milieu,16,2026-04-10 09:51:30.212192
+210,2,Moustapha,Trousseau,1997-12-13,Milieu Offensif,19,2026-04-10 09:51:30.209916
+211,2,Sebastian,Jaggi,2005-06-02,Latéral,20,2026-04-10 09:51:30.215662
+212,2,Nathan,Ducommun,1996-05-26,Milieu,8,2026-04-10 09:51:30.675838
+213,2,Clément,Mottaz,1993-09-11,Défenseur,5,2026-04-10 09:51:30.67474
+214,2,Matteo,Pepe,2000-12-18,Attaquant,15,2026-04-10 09:54:16.510537
+215,2,Maxime,Eschmann,2001-04-16,Milieu Offensif/Attaquant,23,2026-04-10 09:54:16.511328
+216,2,Bastien,Hulmann,1993-01-08,Défenseur central,20,2026-04-17 00:00:00.000000
 
