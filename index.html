@@ -1056,12 +1056,18 @@ async function loadData() {
       const dec  = parseInt(s.decel_count)         || 0;
       const vmax = parseFloat(s.speed_max_kmh)     || 0;
 
-      // Score SHADOW : Vol×35% + Int×40% + Expl×25%
-      // Normalisation simple sur des seuils raisonnables
-      const s_vol  = Math.min(Math.round((dist/1000) / 12 * 100), 100);
-      const s_int  = Math.min(Math.round(dhi / 800 * 100), 100);
-      const s_expl = Math.min(Math.round(spr / 15 * 100), 100);
-      const score  = Math.round(s_vol * .35 + s_int * .40 + s_expl * .25);
+      // ── SCORE SHADOW v2 ──────────────────────────────────────
+      // VOLUME 50%     — réf. 8.0 km
+      // INTENSITÉ 25%  — réf. DHI 400 m
+      // CHARGE MÉC 25% — HMLD(réf.200) + Accél(réf.30) + Décél(réf.25) poids égaux
+      // Sources : Frontiers in Physiology · UEFA · SkillCorner
+      const s_vol  = Math.min(Math.round((dist / 1000) / 8.0 * 100), 100);
+      const s_int  = Math.min(Math.round(dhi / 400 * 100), 100);
+      const s_hmld = Math.min(Math.round(hmld / 200 * 100), 100);
+      const s_acc  = Math.min(Math.round(acc / 30 * 100), 100);
+      const s_dec  = Math.min(Math.round(dec / 25 * 100), 100);
+      const s_expl = Math.round((s_hmld + s_acc + s_dec) / 3);
+      const score  = Math.min(Math.round(s_vol * .50 + s_int * .25 + s_expl * .25), 100);
 
       return {
         ...s,
@@ -1335,7 +1341,7 @@ function openDetail(sessionId, playerId, date) {
           <div class="label">SCORE SHADOW</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:12px">
-          ${[['VOLUME', s.s_vol, 'var(--green)'],['INTENSITÉ', s.s_int, 'var(--blue)'],['EXPLOSIVITÉ', s.s_expl, 'var(--amber)']].map(([l,v,c])=>`
+          ${[['VOLUME', s.s_vol, 'var(--green)'],['INTENSITÉ', s.s_int, 'var(--blue)'],['CHARGE MÉC.', s.s_expl, 'var(--amber)']].map(([l,v,c])=>`
             <div>
               <div style="font-size:9px;color:var(--text3);letter-spacing:1px;font-family:'DM Mono',monospace;margin-bottom:3px">${l}</div>
               <div style="display:flex;align-items:center;gap:8px">
@@ -1382,6 +1388,61 @@ function openDetail(sessionId, playerId, date) {
           </div>
         `).join('')}
       </div>
+    </div>
+
+    <div class="section-label">Lecture de séance — Analyse SHADOW</div>
+    <div class="card" style="margin-bottom:24px">
+      ${(() => {
+        const distKm = parseFloat(s.dist_km);
+        const dhi    = parseFloat(s.dhi_m);
+        const hmld   = parseFloat(s.hmld_val);
+        const acc    = parseInt(s.accel_val);
+        const dec    = parseInt(s.decel_val);
+        const sc     = parseInt(s.score);
+        const avgDHIv = avgDHI;
+        const ratio  = dec > 0 ? acc / dec : 0;
+        const bullets = [];
+
+        // 1. Outlier positif DHI
+        if (dhi > avgDHIv * 1.5 && dhi > 300)
+          bullets.push({c:'var(--green)', t:`DHI exceptionnelle (${Math.round(dhi)} m vs moy. équipe ${Math.round(avgDHIv)} m) — effort haute intensité remarquable`});
+
+        // 2. Volume
+        if (distKm >= 7.5)
+          bullets.push({c:'var(--green)', t:`Volume élevé (${distKm} km) — séance complète au-dessus de la norme`});
+        else if (distKm < 5.5)
+          bullets.push({c:'var(--red)', t:`Volume faible (${distKm} km) — charge à investiguer (blessure ? rôle tactique ?)`});
+
+        // 3. DHI faible malgré bon volume
+        if (dhi < 150 && distKm >= 5.5)
+          bullets.push({c:'var(--amber)', t:`DHI faible (${Math.round(dhi)} m) malgré bon volume — manque d'intensité ou rôle défensif`});
+
+        // 4. Profil paradoxal
+        if (dhi > 350 && acc < 10)
+          bullets.push({c:'var(--amber)', t:`Haute DHI mais peu d'accélérations (${acc}) — vitesse soutenue sans explosivité`});
+        if (acc > 28 && dhi < 150)
+          bullets.push({c:'var(--amber)', t:`Très explosif (${acc} accél.) mais peu de DHI — profil pressing court, pas de course longue`});
+
+        // 5. Ratio accél/décél déséquilibré
+        if (ratio > 2.0 && acc > 10)
+          bullets.push({c:'var(--amber)', t:`Ratio accél/décél déséquilibré (${ratio.toFixed(1)}) — risque musculaire à surveiller`});
+
+        // 6. Score global
+        if (sc >= 80)
+          bullets.push({c:'var(--green)', t:`Score SHADOW élevé (${sc}/100) — séance de haute qualité physique`});
+        else if (sc < 55)
+          bullets.push({c:'var(--red)', t:`Score SHADOW faible (${sc}/100) — séance en dessous des attentes`});
+
+        if (!bullets.length)
+          bullets.push({c:'var(--text2)', t:'Séance dans les normes — aucune alerte particulière'});
+
+        return bullets.slice(0,4).map(b => `
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="width:8px;height:8px;border-radius:50%;background:${b.c};margin-top:4px;flex-shrink:0"></div>
+            <span style="font-size:13px;color:var(--text2);line-height:1.5">${b.t}</span>
+          </div>
+        `).join('');
+      })()}
     </div>
 
     <div class="section-label">Comparatif équipe — DHI</div>
