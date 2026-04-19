@@ -1056,18 +1056,23 @@ async function loadData() {
       const dec  = parseInt(s.decel_count)         || 0;
       const vmax = parseFloat(s.speed_max_kmh)     || 0;
 
-      // ── SCORE SHADOW v2 ──────────────────────────────────────
-      // VOLUME 50%     — réf. 8.0 km
-      // INTENSITÉ 25%  — réf. DHI 400 m
-      // CHARGE MÉC 25% — HMLD(réf.200) + Accél(réf.30) + Décél(réf.25) poids égaux
-      // Sources : Frontiers in Physiology · UEFA · SkillCorner
-      const s_vol  = Math.min(Math.round((dist / 1000) / 8.0 * 100), 100);
-      const s_int  = Math.min(Math.round(dhi / 400 * 100), 100);
-      const s_hmld = Math.min(Math.round(hmld / 200 * 100), 100);
-      const s_acc  = Math.min(Math.round(acc / 30 * 100), 100);
-      const s_dec  = Math.min(Math.round(dec / 25 * 100), 100);
-      const s_expl = Math.round((s_hmld + s_acc + s_dec) / 3);
-      const score  = Math.min(Math.round(s_vol * .50 + s_int * .25 + s_expl * .25), 100);
+      // Score SHADOW aligné sur le référentiel du rapport Python individuel
+      const calc = computeScoresJS({
+        distance_total_m: dist,
+        dhi_m: dhi,
+        sprint_count: spr
+      }, rawSessions
+        .filter(x => x.session_date === s.session_date && x.session_type === s.session_type)
+        .map(x => ({
+          distance_total_m: parseFloat(x.distance_total_m) || 0,
+          dhi_m: parseFloat(x.distance_hi_m) || 0,
+          sprint_count: parseInt(x.sprint_count) || 0
+        }))
+      );
+      const s_vol  = calc.s_vol;
+      const s_int  = calc.s_int;
+      const s_expl = calc.s_expl;
+      const score  = calc.score;
 
       return {
         ...s,
@@ -1109,15 +1114,111 @@ async function loadData() {
 // HELPERS
 // ══════════════════════════════════════════════════════════════
 function scoreClass(s) {
-  if (s >= 82) return '';
-  if (s >= 70) return 'mid';
+  if (s >= 75) return '';
+  if (s >= 60) return 'mid';
   return 'low';
 }
 
 function scoreColor(s) {
-  if (s >= 82) return 'var(--green)';
-  if (s >= 70) return 'var(--amber)';
+  if (s >= 75) return 'var(--green)';
+  if (s >= 60) return 'var(--amber)';
   return 'var(--red)';
+}
+
+function n(v, d = 0) {
+  const x = parseFloat(v);
+  return Number.isFinite(x) ? x : d;
+}
+
+function i(v, d = 0) {
+  const x = parseInt(v, 10);
+  return Number.isFinite(x) ? x : d;
+}
+
+function ordinalFr(rank, total) {
+  return `${rank}${rank === 1 ? 'er' : 'e'} / ${total}`;
+}
+
+function rankInGroup(value, arr) {
+  const vals = arr.map(x => n(x)).sort((a, b) => b - a);
+  const idx = vals.findIndex(v => v === n(value));
+  return idx >= 0 ? idx + 1 : vals.length || 1;
+}
+
+function sprintBadgeText(sprints) {
+  const s = i(sprints);
+  if (s >= 14) return `${s} - élevé`;
+  if (s >= 8) return `${s} - correct`;
+  return `${s} - faible`;
+}
+
+function commentaryDistance(playerDistM, teamAvgDistM) {
+  const diff = n(playerDistM) - n(teamAvgDistM);
+  if (diff >= 800) return `Au-dessus de la moy. équipe (+${(diff/1000).toFixed(1)} km)`;
+  if (diff >= 200) return `Légèrement au-dessus (+${(diff/1000).toFixed(1)} km)`;
+  if (diff <= -800) return `Sous la moy. équipe (${(diff/1000).toFixed(1)} km)`;
+  if (diff <= -200) return `Légèrement sous la moyenne (${(diff/1000).toFixed(1)} km)`;
+  return 'Dans la moyenne équipe';
+}
+
+function commentaryDHI(playerDHI, teamAvgDHI) {
+  const diff = n(playerDHI) - n(teamAvgDHI);
+  if (diff >= 250) return 'Très au-dessus moy. équipe - profil très engagé';
+  if (diff >= 80) return 'Au-dessus de la moy. équipe';
+  if (diff <= -250) return 'Sous la moyenne - charge intense limitée';
+  if (diff <= -80) return 'Légèrement sous la moyenne';
+  return 'Dans la moyenne équipe';
+}
+
+function commentaryIntensity(intensity, avgIntensity) {
+  const diff = n(intensity) - n(avgIntensity);
+  if (diff >= 10) return 'Densité supérieure à la moyenne';
+  if (diff <= -10) return 'Densité plus faible que la moyenne';
+  return 'Densité proche de la moyenne';
+}
+
+function commentaryVmax(rank, total) {
+  if (rank === 1) return "Parmi les plus rapides de l'équipe";
+  if (rank <= Math.max(2, Math.floor(total / 3))) return 'Bonne pointe de vitesse';
+  return 'Pic de vitesse à développer';
+}
+
+function commentaryHMLD(playerHmld, teamAvgHmld) {
+  const diff = n(playerHmld) - n(teamAvgHmld);
+  if (diff >= 45) return 'Charge élevée - surveiller la récupération';
+  if (diff <= -45) return 'Charge contenue - marge disponible';
+  return 'Charge mécanique dans la norme';
+}
+
+function computeScoresJS(player, teamRows) {
+  const distVals = teamRows.map(x => n(x.distance_total_m) / 1000);
+  const dhiVals = teamRows.map(x => n(x.dhi_m));
+  const sprintVals = teamRows.map(x => Math.max(n(x.sprint_count || x.sprints || 0), 0));
+
+  const distAvg = distVals.reduce((a, b) => a + b, 0) / Math.max(distVals.length, 1);
+  const dhiAvg = dhiVals.reduce((a, b) => a + b, 0) / Math.max(dhiVals.length, 1);
+  const sprintAvg = sprintVals.reduce((a, b) => a + b, 0) / Math.max(sprintVals.length, 1);
+
+  const distMax = Math.max(...distVals, 1);
+  const dhiMax = Math.max(...dhiVals, 1);
+  const sprintMax = Math.max(...sprintVals, 1);
+
+  function sc(val, avgT, maxT, moyP) {
+    const re = maxT > 0 ? val / maxT : 0;
+    const rp = moyP > 0 ? val / moyP : 1;
+    return Math.min(Math.round((re * 0.6 + Math.min(rp, 1.3) / 1.3 * 0.4) * 100), 100);
+  }
+
+  const distKm = n(player.distance_total_m) / 1000;
+  const dhi = n(player.dhi_m);
+  const sprints = Math.max(n(player.sprint_count || player.sprints || 0), 0);
+
+  const s_vol = sc(distKm, distAvg, distMax, distAvg);
+  const s_int = sc(dhi, dhiAvg, dhiMax, dhiAvg);
+  const s_expl = sc(sprints, Math.max(sprintAvg, 1), Math.max(sprintMax, 1), Math.max(sprintAvg, 1));
+  const score = Math.round(s_vol * 0.35 + s_int * 0.40 + s_expl * 0.25);
+
+  return { score, s_vol, s_int, s_expl };
 }
 
 function initials(name) {
@@ -1311,28 +1412,52 @@ function openDetail(sessionId, playerId, date) {
   const s = sessions.find(x => x.session_id === sessionId && x.player_id === playerId);
   if (!s) return;
 
-  // Contexte équipe même date/type
   const team = sessions.filter(x => x.session_date === date && x.session_type === s.session_type);
-  const avgDist = team.reduce((a,x)=>a+parseFloat(x.distance_total_m||0),0)/team.length;
-  const avgDHI  = team.reduce((a,x)=>a+parseFloat(x.dhi_m||0),0)/team.length;
-  const avgVmax = team.reduce((a,x)=>a+parseFloat(x.vmax_kmh||0),0)/team.length;
-  const maxDHI  = Math.max(...team.map(x => x.dhi_m));
+  const avgDist = team.reduce((a,x)=>a+n(x.distance_total_m),0)/team.length;
+  const avgDHI  = team.reduce((a,x)=>a+n(x.dhi_m),0)/team.length;
+  const avgVmax = team.reduce((a,x)=>a+n(x.vmax_kmh),0)/team.length;
+  const avgHmld = team.reduce((a,x)=>a+n(x.hmld_val),0)/team.length;
+  const maxDist = Math.max(...team.map(x => n(x.distance_total_m)), 1);
+  const maxDHI  = Math.max(...team.map(x => n(x.dhi_m)), 1);
+  const maxVmax = Math.max(...team.map(x => n(x.vmax_kmh)), 1);
+  const maxHmld = Math.max(...team.map(x => n(x.hmld_val)), 1);
 
-  const totalZone = s.z_marche + s.z_trot + s.z_course + s.z_hi + s.z_sprint || 1;
+  const intensite = n(s.distance_total_m) / Math.max(n(s.duration_min), 1);
+  const avgIntensity = team.reduce((a,x)=>a + (n(x.distance_total_m) / Math.max(n(x.duration_min), 1)), 0) / team.length;
+
+  const distRank = rankInGroup(n(s.distance_total_m), team.map(x => n(x.distance_total_m)));
+  const dhiRank  = rankInGroup(n(s.dhi_m), team.map(x => n(x.dhi_m)));
+  const vmaxRank = rankInGroup(n(s.vmax_kmh), team.map(x => n(x.vmax_kmh)));
+  const hmldRank = rankInGroup(n(s.hmld_val), team.map(x => n(x.hmld_val)));
+
+  const calc = computeScoresJS(s, team);
+  s.score  = calc.score;
+  s.s_vol  = calc.s_vol;
+  s.s_int  = calc.s_int;
+  s.s_expl = calc.s_expl;
+
+  const totalZone = n(s.z_marche) + n(s.z_trot) + n(s.z_course) + n(s.z_hi) + n(s.z_sprint) || 1;
   const zones = [
-    {label:'Marche <7', val:s.z_marche, col:'#3A3F52'},
-    {label:'Trot 7-14', val:s.z_trot,   col:'#5DCAA5'},
-    {label:'Course 14-20', val:s.z_course, col:'#1DBA88'},
-    {label:'HI 20-25', val:s.z_hi,   col:'#F0A830'},
-    {label:'Sprint >25', val:s.z_sprint, col:'#E05A5A'},
+    {label:'Marche <7', val:n(s.z_marche), col:'#3A3F52', txt:`${(n(s.z_marche)/1000).toFixed(2)} km`},
+    {label:'Trot 7-14', val:n(s.z_trot), col:'#5DCAA5', txt:`${(n(s.z_trot)/1000).toFixed(2)} km`},
+    {label:'Course 14-18', val:n(s.z_course), col:'#1DBA88', txt:`${(n(s.z_course)/1000).toFixed(2)} km`},
+    {label:'HI 18-25', val:n(s.z_hi), col:'#F0A830', txt:n(s.z_hi)>=1000?`${(n(s.z_hi)/1000).toFixed(2)} km`:`${Math.round(n(s.z_hi))} m`},
+    {label:'Sprint >25', val:n(s.z_sprint), col:'#E05A5A', txt:n(s.z_sprint)>=1000?`${(n(s.z_sprint)/1000).toFixed(2)} km`:`${Math.round(n(s.z_sprint))} m`},
   ];
+
+  const insightDistance = commentaryDistance(n(s.distance_total_m), avgDist);
+  const insightDHI = commentaryDHI(n(s.dhi_m), avgDHI);
+  const insightIntensity = commentaryIntensity(intensite, avgIntensity);
+  const insightVmax = commentaryVmax(vmaxRank, team.length);
+  const insightHmld = commentaryHMLD(n(s.hmld_val), avgHmld);
+  const sprintText = sprintBadgeText(n(s.sprint_count || s.sprint_val));
 
   document.getElementById('detail-content').innerHTML = `
     <div class="session-header">
       <div class="session-title-block">
         <div class="session-type-badge">${s.session_type==='training'?'⚽ Entraînement':'🏆 Match'}</div>
         <h2>${s.player_name}</h2>
-        <div class="meta">${s.player_pos} · ${fmtDate(s.session_date)} · ${parseFloat(s.duration_min||0).toFixed(0)} min</div>
+        <div class="meta">${s.player_pos} · ${fmtDate(s.session_date)} · ${n(s.duration_min).toFixed(0)} min</div>
       </div>
       <div style="display:flex;gap:24px;align-items:center">
         <div class="score-big">
@@ -1341,7 +1466,11 @@ function openDetail(sessionId, playerId, date) {
           <div class="label">SCORE SHADOW</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:12px">
-          ${[['VOLUME', s.s_vol, 'var(--green)'],['INTENSITÉ', s.s_int, 'var(--blue)'],['CHARGE MÉC.', s.s_expl, 'var(--amber)']].map(([l,v,c])=>`
+          ${[
+            ['VOLUME', s.s_vol, 'var(--green)'],
+            ['INTENSITÉ', s.s_int, 'var(--blue)'],
+            ['EXPLOSIVITÉ', s.s_expl, 'var(--amber)']
+          ].map(([l,v,c])=>`
             <div>
               <div style="font-size:9px;color:var(--text3);letter-spacing:1px;font-family:'DM Mono',monospace;margin-bottom:3px">${l}</div>
               <div style="display:flex;align-items:center;gap:8px">
@@ -1359,20 +1488,41 @@ function openDetail(sessionId, playerId, date) {
     <div class="section-label">Indicateurs de séance</div>
     <div class="kpi-grid" style="margin-bottom:24px">
       ${[
-        ['Distance totale', s.dist_km, 'km', 'var(--green)', `Moy. équipe : ${(avgDist/1000).toFixed(1)} km`],
-        ['DHI >18 km/h', s.dhi_m, 'm', 'var(--green)', `Moy. équipe : ${Math.round(avgDHI)} m`],
-        ['Intensité moy.', s.intensite, 'm/min', 'var(--blue)', `${parseFloat(s.duration_min||0).toFixed(0)} min de séance`],
-        ['Vitesse max', s.vmax_kmh, 'km/h', 'var(--amber)', `Moy. équipe : ${avgVmax.toFixed(1)} km/h`],
-        ['Accel / Décel', `${s.accel_val}/${s.decel_val}`, '', 'var(--blue)', 'Efforts explosifs >2 m/s²'],
-        ['HMLD', s.hmld_val, 'u.a.', 'var(--amber)', 'Charge mécanique'],
-      ].map(([l,v,u,c,d]) => `
+        ['Distance totale', (n(s.distance_total_m)/1000).toFixed(1), 'km', 'var(--green)', insightDistance, `Moy. équipe : ${(avgDist/1000).toFixed(1)} km · Max : ${(maxDist/1000).toFixed(1)} km`, ordinalFr(distRank, team.length)],
+        ['DHI >18 km/h', Math.round(n(s.dhi_m)), 'm', 'var(--green)', insightDHI, `Moy. équipe : ${Math.round(avgDHI)} m · Max : ${Math.round(maxDHI)} m`, ordinalFr(dhiRank, team.length)],
+        ['Intensité moy.', intensite.toFixed(0), 'm/min', 'var(--blue)', insightIntensity, `Moy. équipe : ${avgIntensity.toFixed(0)} m/min`, ''],
+        ['Vitesse max', n(s.vmax_kmh).toFixed(1), 'km/h', 'var(--amber)', insightVmax, `Moy. équipe : ${avgVmax.toFixed(1)} km/h · Max : ${maxVmax.toFixed(1)} km/h`, ordinalFr(vmaxRank, team.length)],
+        ['Charge mécanique', Math.round(n(s.hmld_val)), 'u.a.', 'var(--amber)', insightHmld, `Moy. équipe : ${Math.round(avgHmld)} u.a. · Max : ${Math.round(maxHmld)} u.a.`, ordinalFr(hmldRank, team.length)],
+        ['Accel / Décel', `${i(s.accel_val)} / ${i(s.decel_val)}`, '', 'var(--blue)', sprintText, 'Efforts explosifs & répétitions', '']
+      ].map(([l,v,u,c,insight,compare,rank]) => `
         <div class="kpi-card">
           <div class="kpi-accent" style="background:${c}"></div>
           <div class="kpi-label">${l}</div>
           <div class="kpi-val" style="color:${c}">${v}<span class="kpi-unit">${u}</span></div>
-          <div class="kpi-compare">${d}</div>
+          <div class="kpi-compare" style="margin-bottom:6px">${insight}</div>
+          <div class="kpi-compare">${compare}</div>
+          ${rank ? `<div class="kpi-compare" style="margin-top:6px;color:var(--text2)">${rank}</div>` : ''}
         </div>
       `).join('')}
+    </div>
+
+    <div class="section-label">Lecture automatique</div>
+    <div class="card" style="margin-bottom:24px">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${[
+          `Distance : ${insightDistance}`,
+          `DHI : ${insightDHI}`,
+          `Intensité : ${insightIntensity}`,
+          `Vitesse max : ${insightVmax}`,
+          `HMLD : ${insightHmld}`,
+          `Sprints : ${sprintText}`
+        ].map(x => `
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--green);margin-top:7px;flex-shrink:0"></div>
+            <div style="font-size:13px;color:var(--text2)">${x}</div>
+          </div>
+        `).join('')}
+      </div>
     </div>
 
     <div class="section-label">Zones de vitesse</div>
@@ -1384,65 +1534,10 @@ function openDetail(sessionId, playerId, date) {
         ${zones.map(z => `
           <div class="zone-leg-item">
             <div class="zone-dot" style="background:${z.col}"></div>
-            ${z.label} · ${(z.val/1000).toFixed(2)} km
+            ${z.label} · ${z.txt}
           </div>
         `).join('')}
       </div>
-    </div>
-
-    <div class="section-label">Lecture de séance — Analyse SHADOW</div>
-    <div class="card" style="margin-bottom:24px">
-      ${(() => {
-        const distKm = parseFloat(s.dist_km);
-        const dhi    = parseFloat(s.dhi_m);
-        const hmld   = parseFloat(s.hmld_val);
-        const acc    = parseInt(s.accel_val);
-        const dec    = parseInt(s.decel_val);
-        const sc     = parseInt(s.score);
-        const avgDHIv = avgDHI;
-        const ratio  = dec > 0 ? acc / dec : 0;
-        const bullets = [];
-
-        // 1. Outlier positif DHI
-        if (dhi > avgDHIv * 1.5 && dhi > 300)
-          bullets.push({c:'var(--green)', t:`DHI exceptionnelle (${Math.round(dhi)} m vs moy. équipe ${Math.round(avgDHIv)} m) — effort haute intensité remarquable`});
-
-        // 2. Volume
-        if (distKm >= 7.5)
-          bullets.push({c:'var(--green)', t:`Volume élevé (${distKm} km) — séance complète au-dessus de la norme`});
-        else if (distKm < 5.5)
-          bullets.push({c:'var(--red)', t:`Volume faible (${distKm} km) — charge à investiguer (blessure ? rôle tactique ?)`});
-
-        // 3. DHI faible malgré bon volume
-        if (dhi < 150 && distKm >= 5.5)
-          bullets.push({c:'var(--amber)', t:`DHI faible (${Math.round(dhi)} m) malgré bon volume — manque d'intensité ou rôle défensif`});
-
-        // 4. Profil paradoxal
-        if (dhi > 350 && acc < 10)
-          bullets.push({c:'var(--amber)', t:`Haute DHI mais peu d'accélérations (${acc}) — vitesse soutenue sans explosivité`});
-        if (acc > 28 && dhi < 150)
-          bullets.push({c:'var(--amber)', t:`Très explosif (${acc} accél.) mais peu de DHI — profil pressing court, pas de course longue`});
-
-        // 5. Ratio accél/décél déséquilibré
-        if (ratio > 2.0 && acc > 10)
-          bullets.push({c:'var(--amber)', t:`Ratio accél/décél déséquilibré (${ratio.toFixed(1)}) — risque musculaire à surveiller`});
-
-        // 6. Score global
-        if (sc >= 80)
-          bullets.push({c:'var(--green)', t:`Score SHADOW élevé (${sc}/100) — séance de haute qualité physique`});
-        else if (sc < 55)
-          bullets.push({c:'var(--red)', t:`Score SHADOW faible (${sc}/100) — séance en dessous des attentes`});
-
-        if (!bullets.length)
-          bullets.push({c:'var(--text2)', t:'Séance dans les normes — aucune alerte particulière'});
-
-        return bullets.slice(0,4).map(b => `
-          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
-            <div style="width:8px;height:8px;border-radius:50%;background:${b.c};margin-top:4px;flex-shrink:0"></div>
-            <span style="font-size:13px;color:var(--text2);line-height:1.5">${b.t}</span>
-          </div>
-        `).join('');
-      })()}
     </div>
 
     <div class="section-label">Comparatif équipe — DHI</div>
